@@ -1,5 +1,7 @@
 # ICS-Multi-Funtional-Calculator
  Calculator Based on 8086
+ 
+Final Report included all the relevant information and guidelines with screenshot.
 
 MFC is the whole program of Multi Funtional Calculator
 Included: 
