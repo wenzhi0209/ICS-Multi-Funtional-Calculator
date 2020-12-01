@@ -1,0 +1,2758 @@
+.MODEL SMALL
+.STACK 100
+.DATA
+
+    WELSTRING   DB 0DH,0AH,0DH,0AH,"1. Fraction Calculator"
+                DB 0DH,0AH,"2. Statistic Calculator"
+                DB 0dh,0ah,"Other. Exit"
+                DB 0DH,0AH,"PLEASE ENTER THE NUMBER TO CHOOSE THE CALCULATOR: $"
+	;CODE FROM WEN ZHI
+	;--------------------------------------------------------------------------------------------------------
+	;--------------------------------------------------------------------------------------------------------
+	;Hello here is Varaible And String
+	;Use 
+	;by 
+	;FRACTION Calculator
+	INPUT_ERROR db 0DH,0AH,'PLEASE ENTER THE "=" IN THE END OF FORMULA AND DONT ENTER ALPHABET. $'
+	MATH_ERROR db 0DH,0AH,'THE INPUT VALUE OR THE CALCULATION IS INVALID. $'
+	FRACMSG DB 0DH,0AH,'***FRACTION CALCULATOR***',0DH,0AH
+			DB 0DH,0AH,'THE MAXIMUN DIGIT ENTER FOR DENOMINATOR AND NUMERATOR IS 4'
+			DB 0DH,0AH,'MAXIMUN AND MINIMUN RESULT IS +-65535'
+			DB 0DH,0AH,'PLEASE ENTER THE FRACTION FOR CALCULATION, USE<,>TO REPRESENT <slash> FRACTION'
+			DB 0DH,0AH,'AND ENTER <=> REPRESENT END OF FORMULA'
+			DB 0DH,0AH,'FOR EXAMPLE, 1/8+5/8 --> 1,8+5,8= ',0DH,0AH,'$'
+
+	NEGMSG DB '   (NEGATIF)$'
+	ENDFRACMSG DB 0DH,0AH,"Another fraction need to calculate ? (Y/N) :$"
+	DECIMALMSG DB 0DH,0AH,"DECIMAL VALUES: $"
+	FRACRESULTMSG DB 0DH,0AH,"RESULT: $"
+	MIXFRACMSG DB 0DH,0AH,"MIXED FRACTION: $"
+
+	;store string
+	Formula label byte
+	maxF db 30
+	actF db ?
+	StoredFormula db 30 dup("$")
+
+	;store converted values
+	CovertedF dw 35 dup(0)
+	BOOLEANCF dW 35 dup(0);CHECK OPERATOR,0 for num,1 FOR -+, 2 FOR */, 3 FOR (, 4 FOR )
+	CFLEN DW 0
+	VALIDBOOL DW 0 ;CHECK VALIDDILITY OF ENTER FORMAT
+	MATHBOOL DW 0; CHECK VALIDILITY OF NUMBER PROCESS
+
+
+	;postorder
+	POSTF dw 35 dup(0)
+	BOOLEANPF dW 35 dup(0);CHECK OPERATOR,0 for num,1 FOR -+, 2 FOR */, 3 FOR (, 4 FOR )
+	NUM1 DW 0
+	NUM2 DW 0
+	PFLEN DW 0
+	FRACLEN DW 0
+	TEMPDENO DW 0
+	TEMPNUME DW 0
+
+	;LENGTH OF STACK
+	StackLen DB 0;
+
+	;CALWHOLE REQUIRED for convert to number
+	Digit db '0','0','0','0','0'
+	DigitLen dw 0
+
+	;CTS REQUIRED for convert to string
+	TEMPVAL DW 0;
+	STRDIS DB 0,0,0,0,0
+	HAVEDIGIT DB 0
+
+
+	TempNumeA dw 0 ;RESURLT STORE AT A
+	TempDenoA dw 0 ;RESURLT STORE AT A
+
+	SIMPLYNUME DW 0
+	SIMPLYDENO DW 0
+	WHOLENUM DW 0
+	FocusGCF dw 0
+	GCFSTORE dw 0
+
+	TempNumeB dw 0
+	TempDenoB dw 0
+
+	EXTRANUME DW 0
+	EXTRADENO DW 0
+
+	MULNUM DW 0 ;STORE THE NUMBER FOR MULTIPLY
+	NEGATIVEBOOL DW 0
+
+	;--------------------------------------------------------------------------------------------------------
+	;--------------------------------------------------------------------------------------------------------
+	;Hello here is Varaible And String
+	;Use 
+	;by 
+	;Statistics Calculator
+
+	STATITLE DB 0DH,0AH,"***STATISTICS CALCULATOR***",0DH,0AH,'$'
+	ENTERMSG DB 0DH,0AH,0DH,0AH,"YOUR INPUT SHOULD WITHIN 3 DIGIT AND 2 DECIMAL"
+			DB 0DH,0AH,"PLEASE ENTER THE RAW DATA, EX:18.50"
+			DB 0DH,0AH,"IF NO MORE DATA ENTER ANY CHARACTER TO STOP -> DATA : $"
+
+	SUMOFTOTALMSG DB 0DH,0AH,"SUM OF THE RAW DATA: $"
+
+
+	MODEMSG1 DB 0DH,0AH,"MODE: $"
+	MODEMSG2 DB 0DH,0AH,"OCCUR TIMES: $"
+	NOMODEMSG DB " NO MODE ALL OCCUR TIMES IS SAME $"
+	MEDIANMSG DB 0DH,0AH,"MEDIAN: $"
+	AVGMSG DB 0DH,0AH,"AVERANGE: $"
+
+	SQUAMSG DB 0DH,0AH,"TOTAL OF EACH SQUARE: $"
+	VarianceMsg DB 0DH,0AH,"VARIANCE: $"
+	StanDMSG DB 0DH,0AH,"STANDARD DEVIASION: $"
+	VarianceMsgSAM DB 0DH,0AH,"SAMPLE VARIANCE: $"
+	StanDMsgSAM DB 0DH,0AH,"SAMPLE STANDARD DEVIASION: $"
+	LargestMsg db 0dh,0ah,"LARGEST: $"
+	SmallestMsg db "   SMALLEST: $"
+	RangeMsg db 0dh,0ah,"RANGE (LARGEST-SMALLEST): $"
+	ENTERNUMMSG DB 0DH,0AH,"NUMBERS YOU ENTERED:",0DH,0AH,"$"
+	ASCENNUMMSG DB 0DH,0AH,"ASCENDING ORDER OF NUMBERS YOU ENTERED:",0DH,0AH,"$"
+	COUNTMSG DB 0DH,0AH,"COUNT: $"
+	FORMSTRING LABEL BYTE
+	MAXFS db 7
+	ACTFS db ?
+	FSTRING db 7 dup("$")
+	STOPINPUT DW 0
+
+	ENDSTAMSG DB 0AH,0DH,"Continue calculate another set of Data ? (Y/N) : $"
+	ERRORMSG DB 0DH,0AH,"THE TOTAL OF SQUARE VALUE IS OVER LIMIT,"
+			DB 0AH,0DH,"SO WILL NOT CALCULATE THE FOLLOWING TERM",0DH,0AH,'$'
+
+	;STORE ORI DATA
+	RAWDATA DW 10 DUP(0)
+	RDPOINTS DW 10 DUP(0)
+	RDLEN DW 0
+
+	;store ori data occur times USE SAME RDLEN
+	RAWOCCUR DW 10 DUP(0)
+	HIGHOCCUR DW 0
+
+	;ASCENDING ORDER OF RAWDATA
+	ASCRAWDATA DW 10 DUP(0)
+	ASCRDPOINT DW 10 DUP(0)
+
+
+	;STORE TOTAL OF RAW DATA
+	;SUM
+	TOTALOFRD DW 0
+	TOTALOFRDP DW 0
+	;AVERANGE
+	AVROFRD DW 0
+	AVROFRDP DW 0
+	;MEDIAN
+	MEDIANRD DW 0
+	MEDIANRDP DW 0
+
+
+	;MODE
+	MODEARRAY DW 5 DUP(5) ;STORE REPRESENT INDEX
+	MODELEN DW 0
+
+	;ACCUMULATE OF SQUARE
+	TOTALOFRDS DW 0
+	TOTALOFRDPS DW 0
+	SQUADIGIT DW 0
+	SQUAPOINT DW 0
+	LIMIT DW 0 ;IF 1 MEANS OVERLIMIT
+
+	;VARIANCE
+	VARIANCERD DW 0
+	VARIANCERDP DW 0
+	SUMSQUARERD DW 0
+	SUMSQUARERDP DW 0
+	TEMPRD DW 0
+	TEMPRDP DW 0
+	ATEMPRD DW 0
+	ATEMPRDP DW 0
+	BTEMPRD DW 0
+	BTEMPRDP DW 0
+	HALFRDLEN DW 0
+
+	;SAMPLE VARIANCE
+	VARIANCERDSAM DW 0
+	VARIANCERDPSAM DW 0
+
+
+	;standard deviasion
+	NTRESULTDX DW 0
+	NTRESULTAX DW 0
+	ORIDX DW 0
+	ORIAX DW 0
+
+	;SAMPLE STANDARD DEVIATION
+	NTRESULTDXSAM DW 0
+	NTRESULTAXSAM DW 0
+
+	;STORE LARGEST SMALLEST 
+	LARGESTRD DW 0
+	LARGESTRDP DW 0
+	SMALLESTRD DW 0
+	SMALLESTRDP DW 0
+	RANGERD DW 0
+	RANGERDP DW 0
+
+	;CONVERT AND DISPLAY
+	;SINCE IT STORE AND DISPLAY SO IS STORE THE ASCII OF 0 NOT NUMBER 0
+	SDIGIT DB '0','0','0'
+	SDIGITLEN DB 0
+	SPOINT DB '0','0'
+	SPOINTTLEN DB 0
+	BOOLPOINT DB 0
+
+
+	STRDISDIGIT DB 0,0,0,0,0
+	STRDISPOINT DB 0,0
+	HAVEDIGITSTA DB 0
+
+
+
+
+;Comman Use Term
+;String
+NEW_LINE db 0DH,0AH,'$'
+
+;Variable
+tens_dw dw 10
+hundreds_dw dw 100
+thousands_dw dw 1000
+ten_thousands_dw dw 10000
+
+TEMPAX DW 0
+TEMPBX DW 0
+TEMPDX DW 0
+TEMPSI DW 0
+TEMPTOTAL DW 0
+TEMPCX DW 0;
+
+
+.CODE
+MAIN PROC
+
+    MOV AX,@DATA
+    MOV DS,AX
+
+    START:
+    call far ptr clearSc
+    MOV AH,09h
+    LEA DX,WELSTRING
+    INT 21H
+    MOV AH,01H
+    INT 21h
+    CMP AL,'1'
+    JE FCHOICE
+    CMP AL,'2'
+    JE SECHOICE
+    JMP ENDTEST
+  
+    FCHOICE:
+    CALL FAR PTR FraCCal
+    JMP NROUND
+    SECHOICE:
+    CALL FAR PTR STATISCAL
+    
+    NROUND:
+    JMP START
+
+    ENDTEST:
+    mov ah,4ch
+    int 21H
+
+
+MAIN ENDP
+
+;Main start program for Fraction Calculation
+FraCCal PROC FAR
+    
+    STARTFRACCAL:
+    CALL FAR PTR clearSc
+    MOV AH,09h
+    LEA DX,NEW_LINE
+    INT 21H
+    MOV AH,09h
+    LEA DX,NEW_LINE
+    INT 21H
+
+    MOV NEGATIVEBOOL,0
+    MOV VALIDBOOL,0
+    MOV MATHBOOL,0
+    
+    MOV AH,09h
+    LEA DX,FRACMSG
+    INT 21H
+
+    MOV AH,09h
+    LEA DX,NEW_LINE
+    INT 21H
+
+    MOV AH,0AH
+    LEA DX,Formula
+    INT 21H
+
+    ;convert string formula AND CHECK VALIDILITY
+    CALL FAR PTR CTI
+
+    CMP VALIDBOOL,0
+    JE SHOWERROR
+    ;CONVERT TO POSTFIX
+    CALL FAR PTR CTP
+    ;CALCULATE POSTFIX
+    CALL FAR PTR CALPOSTF
+    ;CHECK SIGN AND DO CONVERT
+    CALL FAR PTR CONVERTSIGNFUN
+    ;SIMPLYFY FRACTION
+    CALL FAR PTR SIMPLYFRAC
+    ;SHOW ALL THE RESULT
+    CALL FAR PTR SHOWFRACRESULT
+
+    CMP MATHBOOL,1
+    JNE COMATHOPE
+    MOV AH,09h
+    LEA DX,NEW_LINE
+    INT 21H
+    MOV AH,09h
+    LEA DX,MATH_ERROR
+    INT 21H
+    
+    ;CORRCT MATH OPERATION
+    COMATHOPE:
+    JMP SHOWFRACENDMSG
+
+    SHOWERROR:
+    MOV AH,09h
+    LEA DX,NEW_LINE
+    INT 21h
+    MOV AH,09h
+    LEA DX,INPUT_ERROR
+    INT 21H
+
+    SHOWFRACENDMSG:
+    MOV AH,09h
+    LEA DX,NEW_LINE
+    INT 21H
+    MOV AH,09h
+    LEA DX,ENDFRACMSG
+    INT 21H
+
+
+    MOV AH,01H
+    INT 21h
+    CMP AL,'Y'
+    JE TURNSTART
+    CMP AL,'y'
+    JE TURNSTART
+    JMP ENDCALPOSTF
+
+    TURNSTART:
+    JMP STARTFRACCAL
+
+    ENDFRACCAL:
+    RET
+
+FraCCal ENDP
+
+;Calculate the whole number from input string
+CALWHOLE PROC FAR
+
+	cmp DigitLen,4
+	jna notoverlimit
+	mov MATHBOOL,1
+
+	notoverlimit:
+    MOV TEMPTOTAL,0
+    MOV DI,0
+    ;FROM LARGE TO SMALL
+    CMP DigitLen,1
+    JE ONES
+    CMP DigitLen,2
+    JE TENS
+    CMP DigitLen,3
+    JE HUNDREDS
+
+    THOUSANDS:
+    MOV AX,0
+    MOV AL,Digit[DI]
+    SUB AL,30H
+    MUL thousands_dw
+    ADD TEMPTOTAL,AX
+    INC DI
+
+    HUNDREDS:
+    MOV AX,0
+    MOV AL,Digit[DI]
+    SUB AL,30H
+    MUL hundreds_dw
+    ADD TEMPTOTAL,AX
+    INC DI
+
+    TENS:
+    MOV AX,0
+    MOV AL,Digit[DI]
+    SUB AL,30H
+    MUL tens_dw
+    ADD TEMPTOTAL,AX
+    INC DI
+
+    ONES:
+    MOV AX,0
+    MOV AL,Digit[DI]
+    SUB AL,30H
+    ADD TEMPTOTAL,AX
+
+    ;put into covertedF
+    MOV AX,CFLEN
+    MOV DX,2
+    MUL DX
+    MOV DI,AX
+
+    mov dx,TEMPTOTAL
+    mov covertedF[DI],dx
+    inc CFLEN
+
+    MOV TEMPCX,CX
+    MOV CX,5
+    MOV DI,0
+    CLEARDIGIT:
+         MOV Digit[DI],'0'
+         INC DI
+    LOOP CLEARDIGIT
+    MOV CX,TEMPCX
+
+    mov di,0
+
+
+    RET
+CALWHOLE ENDP
+
+;Calculate the result
+CALPOSTF PROC FAR
+
+    MOV CX,PFLEN
+    MOV SI,0
+
+    INSTACK:
+        MOV BX,BOOLEANPF[SI]
+        CMP BL,0
+        JNE ISOPERATOR3
+      
+        ;IF NUMBER PUT INTO STACK
+        MOV BX,POSTF[SI]
+        PUSH BX
+
+        JMP ENDLOOP
+
+        ISOPERATOR3:
+       
+	   	JMP POPOPERATION
+		CHECKDENO:
+		
+		;CHECK DENOMINATOR STATUS
+		CMP TempDenoA,0
+		JE ISZERO
+		CMP TempDenoB,0
+		JE ISZERO
+		JMP NOTZERO
+		ISZERO:
+		JMP POPALLRESULT
+
+		NOTZERO:
+        MOV BX,POSTF[SI]
+        CMP BL,'+'
+        JE ADDITION
+        CMP BL,'-'
+        JE SUBTRATION
+        CMP BL,'*'
+        JE MULTIPLICATION
+        CMP BL,'/'
+        JE DIVISION
+
+        ADDITION:
+        CALL FAR PTR FRACADD
+        JMP CALRESULT
+        SUBTRATION:
+        CALL FAR PTR FRACSUB
+        JMP CALRESULT
+        MULTIPLICATION:
+        CALL FAR PTR FRACMUL
+        JMP CALRESULT
+        DIVISION:
+        CALL FAR PTR FRACDIV
+
+        CALRESULT:
+        PUSH TempNumeA
+        push TempDenoA
+         
+        ENDLOOP:
+        ADD SI,2
+    LOOP INSTACK
+	JMP COMPLETCALPF
+
+	POPOPERATION:
+	 	;POP OUT VALUES
+        POP TempDenoB
+        POP TempNumeB
+        POP TempDenoA
+        pop TempNumeA
+	JMP CHECKDENO
+
+	;POP ALL RESULT IF MEET ZERO DENO 
+	;EVERY PUSH AND POP IS IMPORTANT FOR RETURN 
+	POPALLRESULT:
+	MOV MATHBOOL,1
+	MOV TempNumeA,0
+	MOV TempNumeB,0
+	MOV CX,0
+	MOV CL,StackLen
+	POPALL:
+		POP AX
+		DEC StackLen
+	LOOP POPALL
+	JMP ENDCALPOSTF
+
+	COMPLETCALPF:
+    pop TempDenoA
+    pop TempNumeA
+
+	cmp TempDenoA,0
+	JNE DENONOTEZERO
+	MOV TempNumeA,0
+	MOV MATHBOOL,1
+	JMP ENDCALPOSTF
+
+	DENONOTEZERO:
+    CMP TempNumeA,0
+    JNE ENDCALPOSTF
+    MOV TEMPDENOA,0
+
+    ENDCALPOSTF:
+    RET
+
+CALPOSTF ENDP
+
+;ADD OPERATION
+FRACADD PROC FAR
+
+    ;EXTRADENO/NUME TEMPRORARY PLACE OF TEMPDENOB
+    MOV AX,TempDenoB
+    MOV EXTRADENO,AX
+    MOV AX,TempNumeB
+    MOV EXTRANUME,AX
+
+    MOV AX,TempDenoA
+    CMP AX,TempDenoB
+    JE CHECKPOINT
+    JMP NOTSAMEDENO
+    CHECKPOINT:
+    JMP SAMEDENO
+
+    NOTSAMEDENO:
+    ;ELSE check which one bigger
+    CMP AX,TempDenoB
+    JB BdenoLARGER
+        MOV DX,0
+        MOV AX,TempDenoA
+        DIV TempDenoB
+        CMP DX,0
+        JNE MULBETWEEN; REMAINDER NOT ZERO MEANS NEED TO MUL EACH OF THEM
+        MOV MULNUM,AX; STORE THE NUMBER FOR MULTIPLY
+        MOV AX,TEMPDENOB
+        MUL MULNUM
+        MOV TEMPDENOB,AX
+        MOV AX,TempNumeB
+        MUL MULNUM
+        MOV TempNumeB,AX
+    JMP SAMEDENO
+
+    BdenoLARGER:
+        MOV DX,0
+        MOV AX,TempDenoB
+        DIV TempDenoA
+        CMP DX,0
+        JNE MULBETWEEN; REMAINDER NOT ZERO MEANS NEED TO MUL EACH OF THEM
+        MOV MULNUM,AX; STORE THE NUMBER FOR MULTIPLY
+        MOV AX,TEMPDENOA
+        MUL MULNUM
+        MOV TEMPDENOA,AX
+        MOV AX,TempNumeA
+        MUL MULNUM
+        MOV TempNumeA,AX
+    JMP SAMEDENO
+
+    ;last way direct multiply
+    MULBETWEEN:
+    MOV AX,TempDenoB
+    MUL TempDenoA
+    MOV TempDenoB,AX
+    ;PROCEED NUME
+    MOV AX,TempNumeB
+    MUL TempDenoA
+    MOV TempNumeB,AX
+
+    ;PROCEED DENO
+    MOV AX,TempDenoA
+    MUL EXTRADENO
+    MOV TempDenoA,AX
+    ;PROCEED NUME
+    MOV AX,TempNumeA
+    MUL EXTRADENO
+    MOV TempNumeA,AX
+
+
+    SAMEDENO:
+    MOV AX,TempNumeB
+    ADD TempNumeA,AX
+
+    JC NEGATIFNUM2
+    JMP ENDFRACADD
+    NEGATIFNUM2:
+    mov NEGATIVEBOOL,0
+ 
+    ENDFRACADD:
+    RET
+FRACADD ENDP
+
+;SUB OPERATION
+FRACSUB PROC FAR
+
+    ;EXTRADENO/NUME TEMPRORARY PLACE OF TEMPDENOB
+    MOV AX,TempDenoB
+    MOV EXTRADENO,AX
+    MOV AX,TempNumeB
+    MOV EXTRANUME,AX
+
+    MOV AX,TempDenoA
+    CMP AX,TempDenoB
+    JE CHECKPOINT2
+    JMP NOTSAMEDENO2
+    CHECKPOINT2:
+    JMP SAMEDENO2
+
+    NOTSAMEDENO2:
+    ;ELSE check which one bigger
+    CMP AX,TempDenoB
+    JB BdenoLARGER2
+        MOV DX,0
+        MOV AX,TempDenoA
+        DIV TempDenoB
+        CMP DX,0
+        JNE MULBETWEEN2; REMAINDER NOT ZERO MEANS NEED TO MUL EACH OF THEM
+        MOV MULNUM,AX; STORE THE NUMBER FOR MULTIPLY
+        MOV AX,TEMPDENOB
+        MUL MULNUM
+        MOV TEMPDENOB,AX
+        MOV AX,TempNumeB
+        MUL MULNUM
+        MOV TempNumeB,AX
+    JMP SAMEDENO2
+
+    BdenoLARGER2:
+        MOV DX,0
+        MOV AX,TempDenoB
+        DIV TempDenoA
+        CMP DX,0
+        JNE MULBETWEEN2; REMAINDER NOT ZERO MEANS NEED TO MUL EACH OF THEM
+        MOV MULNUM,AX; STORE THE NUMBER FOR MULTIPLY
+        MOV AX,TEMPDENOA
+        MUL MULNUM
+        MOV TEMPDENOA,AX
+        MOV AX,TempNumeA
+        MUL MULNUM
+        MOV TempNumeA,AX
+    JMP SAMEDENO2
+
+    ;last way direct multiply
+    MULBETWEEN2:
+    MOV AX,TempDenoB
+    MUL TempDenoA
+    MOV TempDenoB,AX
+    ;PROCEED NUME
+    MOV AX,TempNumeB
+    MUL TempDenoA
+    MOV TempNumeB,AX
+
+    ;PROCEED DENO
+    MOV AX,TempDenoA
+    MUL EXTRADENO
+    MOV TempDenoA,AX
+    ;PROCEED NUME
+    MOV AX,TempNumeA
+    MUL EXTRADENO
+    MOV TempNumeA,AX
+
+
+
+    SAMEDENO2:
+    MOV AX,TempNumeB
+    SUB TempNumeA,AX
+
+
+    JS NEGATIFNUM
+    JMP ENDFRACSUB
+    NEGATIFNUM:
+    mov NEGATIVEBOOL,1
+
+    ENDFRACSUB:
+    RET
+FRACSUB ENDP
+
+;MUL OPRTATION
+FRACMUL PROC FAR
+
+    MOV DX,0
+    MOV AX,TempDenoA
+    MUL TempDenoB
+    MOV TempDenoA,AX
+
+    CMP DX,0
+    JE MULNUME
+    MOV MATHBOOL,1
+
+    MULNUME:
+    MOV DX,0
+    MOV AX,TempNumeA
+    MUL TempNumeB
+    MOV TempNumeA,AX
+
+    CMP DX,0
+    JE ENDFRACMUL
+    MOV MATHBOOL,1
+
+
+    ENDFRACMUL:
+    RET
+FRACMUL ENDP
+
+;DIV OPERATION
+FRACDIV PROC FAR
+	CMP TempNumeB,0
+	JNE NOTZERO3
+	MOV MATHBOOL,1
+	NOTZERO3:
+    MOV DX,0
+    MOV AX,TempDenoA
+    MUL TempNumeB
+    MOV TempDenoA,AX
+
+    MOV DX,0
+    MOV AX,TempNumeA
+    MUL TempDenoB
+    MOV TempNumeA,AX
+    RET
+FRACDIV ENDP
+
+;CONVERT TO INFIX FORM 
+CTI PROC FAR
+    MOV CFLEN,0
+    MOV DigitLen,0
+    CMP actF,0
+    JNE STARTCTI
+    RET
+    
+    STARTCTI:
+    MOV CX,35
+    MOV SI,0
+    CLEARCTI:
+        MOV BOOLEANCF[SI],0
+        ADD SI,2
+    LOOP CLEARCTI
+    ;convert formula
+    MOV BX,0
+    MOV BL,actF
+
+    MOV CX,BX
+    MOV SI,0
+    MOV DI,0; For Digit Conversion
+
+    convert:
+        MOV BL,StoredFormula[SI]
+        ;ASCII 0 IS 48 DEC
+
+        NOTEQUALS:
+		CMP BL,39
+		JBE NOTVALIDIN
+		CMP BL,46 ; CANNOT ACCEPT POINT '.'=46
+		JE NOTVALIDIN
+        CMP BL,64
+        JB CONCHECK
+		NOTVALIDIN:
+        MOV VALIDBOOL,0
+        RET
+
+        CONCHECK:
+        CMP BL,48
+        JB ISOPERATOR
+        CMP BL,57
+        JG ISOPERATOR
+
+        MOV Digit[DI],BL
+        INC DI
+        INC DigitLen
+        jmp next_convert
+
+        
+        ISOPERATOR:
+        CMP DigitLen,0
+        JE CHECKOPERATOR
+        CALL FAR PTR CALWHOLE
+        MOV DigitLen,0
+    
+
+        ;BX RESERVED FOR VALUE IN THIS FUNCTION
+        ;CHECK COVERTED[DI] IS , OR NOT
+        CHECKOPERATOR:
+        CMP BX,'='
+        JE CHECKFORMULA
+        CMP BX,',' 
+        JE next_convert
+        JMP SETSIGN
+
+        CHECKFORMULA:
+        MOV VALIDBOOL,1
+
+        SETSIGN:
+        MOV AX,CFLEN
+        MOV DX,2
+        MUL DX
+        MOV DI,AX
+        
+        
+        MOV CovertedF[DI],BX
+        MOV BOOLEANCF[DI],1
+        INC CFLEN
+        MOV DI,0; RESET FOR NEXT DIGIT
+
+        next_convert:
+        INC SI
+    LOOP convert
+
+    ENDCTI:
+    RET
+CTI ENDP
+
+;Covert to Postfix form
+CTP PROC FAR
+
+    MOV CX,35
+    MOV SI,0
+    CLEARCTP:
+        MOV BOOLEANPF[SI],0
+        ADD SI,2
+    LOOP CLEARCTP
+
+    MOV PFLEN,0
+    MOV CX,CFLEN
+    MOV SI,0;original array
+    MOV DI,0;postorder array
+    MOV FRACLEN,0
+
+    TOPOST:
+    
+        MOV BX,BOOLEANCF[SI]
+        CMP BX,0
+        JNE ISOPERATOR2;IF OPERATOR CANNOT DIRECT INSERT TO POSTORDER
+
+
+        MOV BX,CovertedF[SI]
+        MOV POSTF[DI],BX
+        ADD DI,2
+        INC PFLEN
+        INC FRACLEN
+        JMP ENDTOPOST
+
+        ISOPERATOR2:
+        CALL FAR PTR CHECKFRACLEN
+        MOV BX,CovertedF[SI]
+        CMP BX,'='
+        JNE C_N_STACK
+        JMP ENDTOPOST
+        
+        C_N_STACK:
+        CMP StackLen,0 ;if stack empty means first value direct push
+        JE PUSHIN
+        POP AX
+        DEC StackLen
+        ;CHECK OPERATOR
+
+        JMP CHECKSIGN
+
+        ;IF BX OCCUR ')' CHECK AND POP AX UNTIL AX IS '('
+        FINDBRACKET:
+        JMP FBRACFUNC
+
+        CHECKPRIOR1:
+        JMP CP1FUNC
+        
+        CHECKPRIOR2:
+        JMP CP2FUNC
+    
+        CHECKPRIOR3:
+        JMP CP3FUNC
+
+        PUSHIN:
+        PUSH BX
+        INC StackLen
+        JMP ENDTOPOST
+
+        CHECKSTACK:
+        MOV POSTF[DI],AX
+        mov BOOLEANPF[DI],1
+        ADD DI,2
+        INC PFLEN
+        JMP C_N_STACK
+
+        ENDTOPOST:
+        ADD SI,2
+    LOOP TOPOST
+    JMP ENDCAL
+
+    CHECKSIGN:
+        CMP BX,')'
+        JE FINDBRACKET
+        CMP BX,'+'
+        JE CHECKPRIOR1
+        CMP BX,'-'
+        JE CHECKPRIOR1
+        CMP BX,'*'
+        JE CHECKPRIOR2
+        CMP BX,'/'
+        JE CHECKPRIOR2
+        CMP BX,'('
+        JE CHECKPRIOR3
+
+    
+
+    FBRACFUNC:
+        CMP Al,'('
+        JE COMPLETEBRAC
+
+        MOV POSTF[DI],AX
+        mov BOOLEANPF[DI],1
+        ADD DI,2
+        INC PFLEN
+
+        cmp StackLen,0
+        je COMPLETEBRAC
+        POP AX
+        DEC StackLen
+        JMP FBRACFUNC
+        
+        COMPLETEBRAC:
+
+    jmp ENDTOPOST
+
+
+    CP1FUNC:
+        CMP AX,40
+        JNE CHECKSTACK
+        PUSH AX
+        INC StackLen
+    JMP PUSHIN
+
+    CP2FUNC:
+        CMP AX,'*'
+        JE CHECKSTACK
+        CMP AX,'/'
+        JE CHECKSTACK
+        PUSH AX
+        INC StackLen
+    JMP PUSHIN
+
+    CP3FUNC:
+        PUSH AX
+        INC StackLen
+    JMP PUSHIN
+
+    ENDCAL:
+
+    ;POP ALL OPERATOR
+    CMP StackLen,0
+    JE RETURNCTP
+    MOV BX,0
+    MOV BL,StackLen
+    MOV CX,bx
+    POPALLOPR:
+        POP AX
+        DEC StackLen
+        MOV POSTF[DI],AX
+        mov BOOLEANPF[DI],1
+        ADD DI,2
+        INC PFLEN
+    LOOP POPALLOPR
+
+    
+    RETURNCTP:
+    RET
+CTP ENDP
+
+;CONVERT TO STRING NEED TO PUT value into AX FIRST
+;ACTUALLY SAME THINGS WIH STATISTICS CALCULATOR (STACTS)
+;SEPARATE OUT FOR EASE FUTURE ENCHANCE
+CTS PROC FAR
+    ;INITIAL THE VALUES
+    MOV CX,5
+    MOV DI,0
+
+    SETZERO:
+        MOV DX,0
+        MOV STRDIS[DI],DL
+        INC DI
+    LOOP SETZERO
+    
+    MOV CX,5
+    MOV DI,4
+
+    DIV10:
+        MOV DX,0
+        DIV tens_dw
+        MOV STRDIS[DI],DL
+        DEC DI
+    LOOP DIV10
+
+
+    MOV CX,5
+    MOV DI,0
+    MOV HAVEDIGIT,0
+    DISLOOP:
+
+        cmp di,4
+        je onlydigit2
+        cmp HAVEDIGIT,0
+        jne onlydigit2
+        mov ah,STRDIS[DI]
+        cmp ah,0
+        je NEXTDIS3
+        mov HAVEDIGIT,1
+
+        onlydigit2:
+        MOV AH,02H
+        MOV DL,STRDIS[DI]
+        ADD DL,30H
+        INT 21H
+
+        NEXTDIS3:
+        INC DI
+    LOOP DISLOOP
+    RET
+CTS ENDP
+
+;SIMPLY THE FRACTION
+SIMPLYFRAC PROC FAR
+    MOV WHOLENUM,0
+	mov simplydeno,0
+	mov simplynume,0
+    ;make it into mixed fraction if nume>deno
+	CMP TempDenoA,0
+    JNE NOTZERO2
+    RET
+
+    NOTZERO2:
+    mov ax,TempNumeA
+    mov bx,TempDenoA
+
+    MOV SIMPLYDENO,BX ;INITIAL VALUES FOR NOT MIX
+    MOV SIMPLYNUME,AX ;INITIAL VALUES FOR NOT MIX
+    CMP AX,BX
+    JB NOTMIXFRAC
+
+    ;IF NUME > DENO CONVERT TO MIXED Frac
+    MOV DX,0
+    DIV SIMPLYDENO
+    MOV WHOLENUM,AX
+    CMP DX,0
+    JNE NOTONLYWHOLE
+    MOV SIMPLYNUME,0
+    MOV SIMPLYDENO,0
+    JMP ENDSIMPLYFRAC
+
+    NOTONLYWHOLE:
+    MOV SIMPLYNUME,DX
+    MOV DX,TEMPDENOA
+    MOV SIMPLYDENO,DX
+    
+
+    NOTMIXFRAC:
+    ;FIRST CHECK WITH DIVISION METHOD
+    MOV DX,0
+    MOV AX,SIMPLYDENO
+    DIV SIMPLYNUME
+    ;CHECK REMAIDER FOR KNOW CAN FULLY DEVIDE OR NOT
+    CMP DX,0
+    ;IF CAN BOTH DIVIDE NUME
+    JNE NEXTMETHOD
+        ;CAN
+        MOV DX,0
+        MOV AX,SIMPLYDENO
+        DIV SIMPLYNUME
+        MOV SIMPLYDENO,AX
+
+        MOV DX,0
+        MOV AX,SIMPLYNUME
+        DIV SIMPLYNUME
+        MOV SIMPLYNUME,AX
+
+    NEXTMETHOD:
+    
+    ;Greatest Common Factor
+    ;check simplydeno and simplynume
+    mov FocusGCF,0
+    mov ax,simplydeno
+    cmp ax,simplynume
+    JB DENOGCF
+    MOV AX,SIMPLYNUME
+    MOV FocusGCF,AX
+    JMP NUMEGCF
+
+    DENOGCF:
+    MOV FocusGCF,AX
+
+    NUMEGCF:
+    MOV CX,FocusGCF
+    MOV BX,1
+    FindGCF:
+
+    MOV AX,SIMPLYDENO
+    MOV DX,0
+    DIV BX
+    CMP DX,0
+    JNE NOTGCF
+
+    MOV AX,SIMPLYNUME
+    MOV DX,0
+    DIV BX
+    CMP DX,0
+    JNE NOTGCF
+
+    MOV GCFSTORE,BX
+
+    NOTGCF:
+    INC BX
+    LOOP FindGCF
+
+    MOV AX,SIMPLYNUME
+    MOV DX,0
+    DIV GCFSTORE
+    MOV SIMPLYNUME,AX
+
+    MOV AX,SIMPLYDENO
+    MOV DX,0
+    DIV GCFSTORE
+    MOV SIMPLYDENO,AX
+
+
+    ENDSIMPLYFRAC:
+    RET
+SIMPLYFRAC ENDP
+
+;TO CHECK THE DATA STORE AND COVENT TO STANDART FORMAT FOR POSTFIX
+CHECKFRACLEN PROC FAR
+    CMP FRACLEN,1
+    JE CONDTOF
+    CMP FRACLEN,3
+    JE CONMTOF
+    JMP ENDCHECKFL
+
+    ;CONVERT DIGIT TO FRACTION
+    ;PUT 1 IN DENO
+    CONDTOF:
+    MOV BX,1
+    MOV POSTF[DI],BX
+    ADD DI,2
+    INC PFLEN
+    MOV FRACLEN,0
+    JMP ENDCHECKFL
+
+    ;CONVERT MIX FRAC TO REAL FRACC
+    CONMTOF:
+    SUB DI,2
+    DEC PFLEN
+    MOV AX,POSTF[DI]
+    MOV TEMPDENO,AX
+
+    SUB DI,2
+    DEC PFLEN
+    MOV AX,POSTF[DI]
+    MOV TEMPNUME,AX
+
+    SUB DI,2
+    DEC PFLEN
+    MOV AX,POSTF[DI]
+    mul TEMPDENO
+    ADD TEMPNUME,AX
+
+    MOV BX,TEMPNUME
+    MOV POSTF[DI],BX
+    ADD DI,2
+    INC PFLEN
+
+    MOV BX,TEMPDENO
+    MOV POSTF[DI],BX
+    ADD DI,2
+    INC PFLEN
+
+    ENDCHECKFL:
+    MOV FRACLEN,0
+    RET
+CHECKFRACLEN ENDP
+
+;BECAUSE THIS FUNCTION THE CALCULATOR WILL NOT ABLE TO IDENTIFY THE
+;ERROR WHICH OVER OR LESS THAN 65535
+;BUT IT PROVIDE THE NEGATIVE PRESENTATION FOR THE SYSTEM
+;SIGNED DIGIT ONLY MAXIMUN GO TO 32768
+CONVERTSIGNFUN PROC FAR
+    CMP NEGATIVEBOOL,0
+    JE ENDCSF
+    MOV BX,0
+
+    MOV AX,65535
+    SUB AX,TempNumeA
+    MOV TempNumeA,AX
+    INC TempNumeA
+
+    ENDCSF:
+    RET
+CONVERTSIGNFUN ENDP
+
+;SIMPLE FUNCTION FOR CONVERT FRACTION TO Decimal
+CALDECIMAL PROC FAR
+    MOV AX,WHOLENUM
+    CALL FAR PTR CTS
+
+    CMP SIMPLYNUME,0
+    JE ENDCALDECIMAL
+
+    MOV AH,02H
+    MOV DL,'.'
+    INT 21H
+    
+    MOV DX,0
+    MOV AX,SIMPLYNUME
+    MUL hundreds_dw
+    DIV SIMPLYDENO
+    MOV TEMPAX,AX
+
+    MOV AX,DX
+    MOV DX,0
+    MUL hundreds_dw
+    DIV SIMPLYDENO
+    CMP AX,50
+    JB NOCARRY
+    INC TEMPAX
+
+    NOCARRY:
+    MOV DX,0
+    MOV AX,TEMPAX
+    DIV tens_dw
+
+    MOV BX,DX
+    MOV DX,AX
+
+    MOV AH,02H
+    ADD DX,30H
+    INT 21h
+    MOV AH,02H
+    MOV DX,BX
+    ADD DX,30H
+    INT 21H
+
+    ENDCALDECIMAL:
+    RET
+CALDECIMAL ENDP
+
+;SIMPLE FUNCTION FOR DISPLAY
+SHOWFRACRESULT PROC FAR
+    mov ah,09h
+    lea dx,NEW_LINE
+    int 21h
+
+    mov ah,09H
+    lea dx,FRACRESULTMSG
+    int 21h
+
+    MOV AX,TempNumeA
+    CALL FAR PTR CTS
+    MOV AH,02H
+    MOV DL,'/'
+    INT 21H
+    MOV AX,TempDenoA
+    CALL FAR PTR CTS
+
+    CMP NEGATIVEBOOL,0
+    JE NOTNEG
+    MOV AH,09H
+    LEA DX,NEGMSG
+    INT 21H
+    NOTNEG:
+
+
+    MOV AH,09h
+    LEA DX,NEW_LINE
+    INT 21H
+
+    mov ah,09H
+    LEA dx,MIXFRACMSG
+    int 21h
+
+
+    MOV AX,WHOLENUM
+    CALL FAR PTR CTS
+
+    MOV AH,02H
+    MOV DL,' '
+    INT 21H
+
+    MOV AX,SIMPLYNUME
+    CALL FAR PTR CTS
+
+    MOV AH,02H
+    MOV DL,'/'
+    INT 21H
+
+    MOV AX,SIMPLYDENO
+    CALL FAR PTR CTS
+
+    CMP NEGATIVEBOOL,0
+    JE NOTNEG2
+    MOV AH,09H
+    LEA DX,NEGMSG
+    INT 21H
+    NOTNEG2:
+
+    MOV AH,09h
+    LEA DX,NEW_LINE
+    INT 21h
+    MOV AH,09h
+    LEA DX,DECIMALMSG
+    INT 21h
+    CALL FAR PTR CALDECIMAL
+
+    CMP NEGATIVEBOOL,0
+    JE NOTNEG3
+    MOV AH,09H
+    LEA DX,NEGMSG
+    INT 21H
+    NOTNEG3:
+
+    RET
+SHOWFRACRESULT ENDP
+
+
+;----------------------------------------------------------------------------------------------
+;STATISTICS CALCULATOR
+;Main Driver Program Statistic Calculation
+STATISCAL PROC FAR
+
+    STARTSTACAL:
+    CALL FAR PTR clearSc
+
+    MOV AH,09h
+    LEA DX,STATITLE
+    INT 21h
+
+    mov RDLEN,0
+    MOV STOPINPUT,0
+    ; GET THE VALUES FROM USER
+    MOV CX,10
+    GETRAWD:
+        MOV AH,09H
+        LEA DX,ENTERMSG
+        INT 21H
+
+        MOV AH,0AH
+        LEA DX,FORMSTRING
+        INT 21H
+
+        CALL FAR PTR CONVERTSTR
+        MOV BX,STOPINPUT
+        CMP BX,0
+        JNE DONEINPUT
+        CALL FAR PTR SCALWHOLE
+    LOOP GETRAWD
+
+    DONEINPUT:
+    CMP RDLEN,0
+    JNE DOSTACAL
+    JMP ENDSTAMSGDIS
+    
+    DOSTACAL:
+    ;CALCULATE SUM OF THE ALL VALUES
+    CALL FAR PTR ACCUMULATE
+    CALL FAR PTR ACCUMULATESQUA
+    CALL FAR PTR SELECTSORT
+    CALL FAR PTR FINDMEDIAN
+    CALL FAR PTR FINDMODE
+    CALL FAR PTR FINDAVG
+    CALL FAR PTR CALRANGE
+
+    CALL FAR PTR CALVARIANCE
+    CALL FAR PTR CALSAMVARIANCE
+    CALL FAR PTR CALSTDV
+    CALL FAR PTR CALSTDVSAM
+    
+
+    CALL FAR PTR STARESULT
+   
+
+    ENDSTAMSGDIS:
+    MOV AH,09h
+    LEA DX,NEW_LINE
+    INT 21H
+    MOV AH,09h
+    LEA DX,ENDSTAMSG
+    INT 21H
+    
+  
+    MOV AH,01H
+    INT 21h
+    CMP AL,'Y'
+    JE STATURNSTART
+    CMP AL,'y'
+    JE STATURNSTART
+    JMP ENDSTACAL
+
+    STATURNSTART:
+    JMP STARTSTACAL
+
+    ENDSTACAL:
+    RET
+STATISCAL ENDP
+
+;Find MODE DEPENDS ON OCCUR TIMES
+FINDMODE PROC FAR
+    ;reset rawoccur array
+    mov cx,RDLEN
+    mov si,0
+    RERAWOCCUR:
+        MOV RAWOCCUR[SI],0
+        ADD SI,2
+    LOOP RERAWOCCUR
+
+
+
+    MOV MODELEN,0
+    MOV CX,RDLEN
+    MOV SI,0  
+    ;RUN THROUGH ALL RAW DATA
+    RUNTRAWDATA:
+        MOV TEMPCX,CX
+
+        MOV AX,RAWDATA[SI]
+        MOV BX,RDPOINTS[SI]
+
+        MOV CX,RDLEN
+        MOV DI,0
+        RUNTRAWDATA2:
+            CMP AX,RAWDATA[DI]
+            JNE ENDLOOPRD2
+            CMP BX,RDPOINTS[DI]
+            JNE ENDLOOPRD2
+
+            INC RAWOCCUR[SI]
+            ENDLOOPRD2:
+            ADD DI,2
+        LOOP RUNTRAWDATA2
+
+        ADD SI,2
+        MOV CX,TEMPCX
+    LOOP RUNTRAWDATA
+
+    ;FIND LARGEST VALUE IN RAWOCCUR
+    MOV CX,RDLEN
+    MOV SI,0
+    MOV HIGHOCCUR,0
+    RUNRAWOCCUR:
+        MOV AX,RAWOCCUR[SI]
+
+        CMP AX,HIGHOCCUR
+        JLE NEXTRUN
+
+        MOV HIGHOCCUR,AX
+    
+        NEXTRUN:
+        ADD SI,2
+    LOOP RUNRAWOCCUR
+
+
+    ;FIND all value which are highoccur
+    
+    MOV CX,RDLEN
+    MOV SI,0
+    MOV DI,0
+
+    PREMODEV:
+
+        MOV TEMPCX,CX
+        MOV TEMPSI,SI
+
+        MOV AX,RAWOCCUR[SI]
+        CMP AX,HIGHOCCUR
+        JNE NEXTDIS
+
+        CMP MODELEN,0
+        JE NOTREPEAT
+
+    
+        MOV CX,MODELEN
+        MOV SI,0
+        CHECKREP:
+          
+            MOV DI,MODEARRAY[SI]
+            MOV AX,RAWDATA[DI]
+            MOV DI,TEMPSI
+            MOV BX,RAWDATA[DI]
+
+            CMP AX,BX
+            JE CHKPOINT
+            JMP NEXTINDEX
+
+            CHKPOINT:
+            MOV DI,MODEARRAY[SI]
+            MOV AX,RDPOINTS[DI]
+            MOV DI,TEMPSI
+            MOV BX,RDPOINTS[DI]
+
+            CMP AX,BX
+            JE NEXTDIS
+            
+            NEXTINDEX:
+            ADD SI,2
+
+        LOOP CHECKREP
+
+      
+        MOV AX,MODELEN
+        MOV BX,2
+        MUL BX
+        MOV DI,AX
+        
+        NOTREPEAT:
+        MOV SI,TEMPSI
+        MOV MODEARRAY[DI],SI
+        INC MODELEN
+
+        NEXTDIS:
+        MOV CX,TEMPCX
+        MOV SI,TEMPSI
+
+        ADD SI,2
+    LOOP PREMODEV
+    RET
+FINDMODE ENDP
+
+;FIND MEDIAN DEPENS ON SORTING FUNCTION
+FINDMEDIAN PROC FAR
+    MOV DX,0
+    MOV AX,RDLEN
+    MOV BX,2
+    DIV BX
+    CMP DX,1
+    JE ONLYONE
+
+    MOV DX,0
+    MUL BX
+    MOV SI,AX
+
+    MOV AX,ASCRAWDATA[SI]
+    MOV MEDIANRD,AX
+    MOV AX,ASCRDPOINT[SI]
+    MOV MEDIANRDP,AX
+    
+    SUB SI,2 ;INDEX START FROM ZERO TAKE N WITH N-1
+    MOV AX,ASCRAWDATA[SI]
+    ADD MEDIANRD,AX
+    MOV AX,ASCRDPOINT[SI]
+    ADD MEDIANRDP,AX
+
+    CMP MEDIANRDP,100
+    JGE CARRY100
+    JMP DIVIDETWO
+
+    CARRY100:
+    ADD MEDIANRD,1
+    SUB MEDIANRDP,100
+
+    DIVIDETWO:
+
+    ;DECIMAL POINT
+    MOV DX,0
+    MOV AX,MEDIANRDP
+    MOV BX,2
+    DIV BX
+    MOV MEDIANRDP,AX
+    CMP DX,0
+    JE CALMDRD
+    ADD MEDIANRDP,1
+
+    CALMDRD:
+    MOV DX,0
+    MOV AX,MEDIANRD
+    MOV BX,2
+    DIV BX
+    MOV MEDIANRD,AX
+    CMP DX,0
+    JE ENDFINDMEDIAN
+    ADD MEDIANRDP,50
+
+    JMP ENDFINDMEDIAN
+
+    ONLYONE:
+    MOV DX,0
+    MUL BX
+    MOV SI,AX
+    MOV AX,ASCRAWDATA[SI]
+    MOV MEDIANRD,AX
+    MOV AX,ASCRDPOINT[SI]
+    MOV MEDIANRDP,AX
+
+
+    ENDFINDMEDIAN:
+    RET
+FINDMEDIAN ENDP
+
+;Find Average
+FINDAVG PROC FAR
+    MOV AVROFRDP,0
+    MOV AVROFRD,0
+    MOV AX,TOTALOFRD
+    MOV DX,0
+    DIV RDLEN
+    MOV AVROFRD,AX
+
+    MOV AX,DX
+    MUL hundreds_dw
+    ADD AX,TOTALOFRDP
+    MOV DX,0
+    DIV RDLEN
+    MOV AVROFRDP,AX
+    CMP DX,50
+    JL ENDFINDAVG
+    INC AVROFRDP
+   
+    ENDFINDAVG:
+    RET
+FINDAVG ENDP
+
+;CONVERT TO STRING AND DISPLAY
+CONVERTSTR PROC FAR
+
+    MOV SDIGITLEN,0
+    MOV SPOINTTLEN,0
+    MOV BOOLPOINT,0 ;SET TO FALSE
+    MOV TEMPCX,CX
+
+    MOV BX,0
+    MOV BL,ACTFS
+    MOV CX,BX
+    MOV SI,0
+    MOV DI,0
+    SCONVERT: 
+        MOV BL,FSTRING[SI]
+        CMP BL,64
+        JGE Nintterupt
+        CMP BOOLPOINT,0
+        JNE ISPOINT
+        CMP BL,48
+        JL POINTEXIST
+
+        MOV SDigit[SI],BL
+        INC SDIGITLEN
+        JMP ENDSCONVERT
+
+        POINTEXIST:
+        MOV BOOLPOINT,1
+        JMP ENDSCONVERT
+
+        ISPOINT:
+        MOV SPOINT[DI],BL
+        INC SPOINTTLEN
+        INC DI
+
+        ENDSCONVERT:
+        INC SI
+    LOOP SCONVERT
+    JMP ENDCONVERTSTR
+
+    Nintterupt:
+    MOV STOPINPUT,1
+
+    ENDCONVERTSTR:
+    MOV CX,TEMPCX
+    RET
+
+CONVERTSTR ENDP
+
+;COVER INPUT DIGIT INTO NUMBER IN SYSTEM
+SCALWHOLE PROC FAR
+
+    MOV TEMPTOTAL,0
+    MOV DI,0
+    ;FROM LARGE TO SMALL
+    CMP SDIGITLEN,1
+    JE STAONES
+    CMP SDIGITLEN,2
+    JE STATENS
+
+    STAHUNDREDS:
+    MOV AX,0
+    MOV AL,SDigit[DI]
+    SUB AL,30H
+    MUL hundreds_dw
+    ADD TEMPTOTAL,AX
+    INC DI
+
+    STATENS:
+    MOV AX,0
+    MOV AL,SDigit[DI]
+    SUB AL,30H
+    MUL tens_dw
+    ADD TEMPTOTAL,AX
+    INC DI
+
+    STAONES:
+    MOV AX,0
+    MOV AL,SDigit[DI]
+    SUB AL,30H
+    ADD TEMPTOTAL,AX 
+
+    ;put into RAWDATA
+    MOV AX,RDLEN
+    MOV DX,2
+    MUL DX
+    MOV DI,AX
+
+    mov dx,TEMPTOTAL
+    mov RAWDATA[DI],dx
+  
+
+    ;----------------------
+
+    MOV DI,0
+    MOV TEMPTOTAL,0
+
+    TENSP:
+    MOV AX,0
+    MOV AL,SPOINT[DI]
+    SUB AL,30H
+    MUL tens_dw
+    ADD TEMPTOTAL,AX
+    INC DI
+
+    ONESP:
+    MOV AX,0
+    MOV AL,SPOINT[DI]
+    SUB AL,30H
+    ADD TEMPTOTAL,AX
+
+    ;put into RDPOINTS
+    MOV AX,RDLEN
+    MOV DX,2
+    MUL DX
+    MOV DI,AX
+
+    mov dx,TEMPTOTAL
+    mov RDPOINTS[DI],dx
+
+    inc RDLEN
+   
+
+    ;RESET SDIGIT AND SPOINT
+    MOV TEMPCX,CX
+
+    MOV CX,3
+    MOV DI,0
+    RESETDIGIT:
+        MOV SDIGIT[DI],'0'
+        INC DI
+    LOOP RESETDIGIT
+
+    MOV CX,2
+    MOV DI,0
+    RESETPOINTS:
+        MOV SPOINT[DI],'0'
+        INC DI
+    LOOP RESETPOINTS
+
+    MOV CX,TEMPCX
+    MOV DI,0
+
+    RET
+SCALWHOLE ENDP
+
+;TOTAL ALL RAWDATA
+ACCUMULATE PROC FAR
+
+    MOV TOTALOFRD,0
+    MOV TOTALOFRDP,0
+
+    MOV CX,RDLEN
+    MOV SI,0
+
+    ADDVALUES:
+        MOV AX,TOTALOFRD
+        ADD AX,RAWDATA[SI]
+        MOV TOTALOFRD,AX
+
+        MOV BX,TOTALOFRDP
+        ADD BX,RDPOINTS[SI]
+        MOV TOTALOFRDP,BX
+        CMP BX,100
+        JL NEXTVALUE
+
+        MOV AX,BX
+        MOV DX,0
+        DIV hundreds_dw
+        MOV TOTALOFRDP,DX
+        ADD TOTALOFRD,AX
+       
+        NEXTVALUE:
+        ADD SI,2
+    LOOP ADDVALUES
+
+    RET
+    
+ACCUMULATE ENDP
+
+;TOTAL OF SQUARE RAW DATA
+ACCUMULATESQUA PROC FAR
+    MOV LIMIT,0
+    MOV TOTALOFRDS,0
+    MOV TOTALOFRDPS,0
+    
+    MOV CX,RDLEN
+    MOV SI,0
+
+    ADDVALUES2:
+
+        mov SQUADIGIT,0
+        mov SQUAPOINT,0
+        JMP PROCEEDSQUARE
+
+        SQUAREDONE:
+        MOV BX,TOTALOFRDPS
+        ADD BX,SQUAPOINT
+        MOV TOTALOFRDPS,BX
+        CMP BX,100
+        JL NOCARRY2
+        MOV DX,0
+        MOV AX,BX
+        DIV hundreds_dw
+        MOV TOTALOFRDPS,DX
+        ADD TOTALOFRDS,AX
+        JMP POINTDONE
+
+        NOCARRY2:
+        MOV TOTALOFRDPS,BX
+
+        POINTDONE:
+        MOV BX,TOTALOFRDS
+        ADD BX,SQUADIGIT
+        jc OVERLIMIT
+        MOV TOTALOFRDS,BX
+
+        ADD SI,2
+    LOOP ADDVALUES2
+    JMP RETURNSQUA
+
+    ;the number for square must below 256, and the square result not more than 65536
+    ;6.8=6+80/100
+    ;(a+b)square= a square + b square +2a*b
+    PROCEEDSQUARE:
+        ;point
+        ;ALL TAKE 2 DECIMAL POINT ONLY!
+        MOV AX,RDPOINTS[SI]
+        MUL AX
+        DIV hundreds_dw
+        MOV SQUAPOINT,ax
+        CMP DX,50
+        JL NOCARRY3
+        INC SQUAPOINT
+
+        NOCARRY3:
+        Mov Ax,RAWDATA[si]
+        mul RDPOINTS[si]
+        mov bx,2
+        mul bx
+        add ax,SQUAPOINT
+        mov dx,0
+        div hundreds_dw
+        mov SQUAPOINT,dx
+        add SQUADIGIT,ax
+
+        ;digit
+        MOV DX,0
+        MOV AX,RAWDATA[SI]
+        MUL AX
+        ADD SQUADIGIT,AX
+        CMP DX,0
+        JNE OVERLIMIT
+    JMP SQUAREDONE
+
+    OVERLIMIT:
+    MOV TOTALOFRDS,0
+    MOV TOTALOFRDPS,0
+    MOV LIMIT,1
+
+
+    RETURNSQUA:
+    RET
+ACCUMULATESQUA ENDP
+
+;CACULATE VARIANCE
+CALVARIANCE PROC FAR
+    MOV VARIANCERD,0
+    MOV VARIANCERDP,0
+    MOV TEMPRD,0
+    MOV TEMPRDP,0
+    ;CHECK LIMIT
+    CMP LIMIT,0
+    JE DOCALV
+    RET
+    DOCALV:
+    ;CALCULATE THE HALF OF RDLEN FOR CARRY
+    MOV DX,0
+    MOV AX,RDLEN
+    MOV BX,2
+    DIV BX
+    CMP DX,0
+    JE NOCARRY5
+    ADD AX,1
+    NOCARRY5:
+    MOV HALFRDLEN,AX
+    
+    ;SETA
+    ;TOTALOFSQUARE DIVIDE NUMBER OF RAW DATA
+    MOV DX,0
+    MOV AX,TOTALOFRDS
+    DIV RDLEN
+    MOV ATEMPRD,AX
+
+    ;REMAINDER NEED TO PROCEED WITH CARRY
+    MOV AX,DX
+    MUL hundreds_dw
+    MOV DX,0
+    DIV RDLEN
+    MOV TEMPRDP,AX
+    CMP DX,50
+    JB NOCARRY12
+    ADD TEMPRDP,1
+
+    NOCARRY12:
+    MOV DX,0
+    MOV AX,TOTALOFRDPS
+    DIV RDLEN
+    ADD AX,TEMPRDP
+    CMP DX,HALFRDLEN
+    JL NOCARRY6
+    ADD AX,1
+    NOCARRY6:
+    MOV ATEMPRDP,AX
+
+
+    ;SET B
+    ;SUM DIVIDE NUMBER OF RAW DATA
+    MOV DX,0
+    MOV AX,TOTALOFRD
+    DIV RDLEN
+    MOV BTEMPRD,AX
+
+    ;REMAINDER NEED TO PROCEED WITH CARRY
+    MOV AX,DX
+    MUL hundreds_dw
+    MOV DX,0
+    DIV RDLEN
+    MOV TEMPRDP,AX
+    CMP DX,HALFRDLEN
+    JB NOCARRY13
+    ADD TEMPRDP,1
+
+    NOCARRY13:
+    MOV DX,0
+    MOV AX,TOTALOFRDP
+    DIV RDLEN
+    ADD AX,TEMPRDP
+    CMP DX,HALFRDLEN
+    JL NOCARRY7
+    ADD AX,1
+    NOCARRY7:
+    CMP AX,100
+    JL NOCARRY15
+    ADD BTEMPRD,1
+    SUB AX,100
+
+    NOCARRY15:
+    MOV BTEMPRDP,AX
+
+
+
+    ; a+b square= a s+ b s+ 2ab
+    ; CALCULATE SQUARE (SUM divide N)
+    MOV AX,BTEMPRDP;
+    MUL AX
+    DIV hundreds_dw
+    MOV TEMPRDP,ax
+    CMP DX,50
+    JL NOCARRY4
+    INC TEMPRDP
+
+    NOCARRY4:
+    mov dx,0
+    Mov Ax,BTEMPRD;
+    mul BTEMPRDP
+    mov bx,2
+    mul bx
+    add ax,TEMPRDP
+    mov dx,0
+    div hundreds_dw
+    mov TEMPRDP,dx
+    add TEMPRD,ax
+
+    ;digit
+    MOV AX,BTEMPRD;
+    MUL AX
+    ADD AX,TEMPRD
+    adc dx,0
+
+    MOV BTEMPRD,AX
+    MOV AX,TEMPRDP
+    MOV BTEMPRDP,AX
+
+   
+    ;SET A- SETB
+    MOV AX,ATEMPRDP
+    MOV BX,BTEMPRDP
+    CMP BX,AX
+    JLE NONEEDBORROW
+    DEC ATEMPRD
+    ADD AX,100
+
+    NONEEDBORROW:
+    SUB AX,BX
+    MOV VARIANCERDP,AX
+    MOV AX,ATEMPRD
+    MOV BX,BTEMPRD
+    SUB AX,BX
+    MOV VARIANCERD,AX
+
+    RET
+CALVARIANCE ENDP
+
+;CACULATE STANDARD DEVIATION
+CALSTDV PROC FAR
+    MOV NTRESULTAX,0
+    MOV NTRESULTDX,0
+    MOV ORIAX,0
+    MOV ORIDX,0
+    CMP LIMIT,0
+    JE DOCALSTDV
+    RET
+    DOCALSTDV:
+    
+    mov ax,VARIANCERDP
+    CMP AX,0
+    JE CHECKRD
+    MUL hundreds_dw
+    MOV TEMPAX,AX
+
+    CHECKRD:
+    MOV AX,VARIANCERD
+    CMP AX,0
+    JE ENDCALSTDV
+    mul ten_thousands_dw
+    add ax,TEMPAX
+    adc dx,0
+
+    mov ORIAX,ax
+    mov ORIDX,DX
+    mov NTRESULTAX,27000
+
+    Mov cx,10
+    NEWTONCAL:  
+        MOV AX,ORIAX
+        MOV DX,ORIDX
+        DIV NTRESULTAX
+
+        ADD AX,NTRESULTAX
+        MOV DX,0
+        MOV BX,2
+        DIV bx
+
+        MOV NTRESULTAX,AX
+        MOV NTRESULTDX,DX
+
+
+    LOOP NEWTONCAL
+
+    MOV AX,NTRESULTAX
+    MOV DX,0
+    DIV hundreds_dw
+    MOV NTRESULTAX,AX
+    MOV NTRESULTDX,DX
+
+    ENDCALSTDV:
+    RET
+CALSTDV ENDP
+
+;EXTRA
+;LAZY TO EXPLAIN DIFFERENCES SAMPLE/POPULATION VARIACE
+;JUST DO BOTH 
+CALSAMVARIANCE PROC FAR 
+    MOV VARIANCERDSAM,0
+    MOV VARIANCERDPSAM,0
+    CMP RDLEN,1
+    JNE STARTCAL
+    RET
+    STARTCAL:
+    MOV TEMPRD,0
+    MOV TEMPRDP,0
+
+    ;CHECK LIMIT
+    CMP LIMIT,0
+    JE DOCALV2
+    RET
+    DOCALV2:
+    ;CALCULATE THE HALF OF RDLEN FOR CARRY
+    MOV DX,0
+    MOV AX,RDLEN
+    MOV BX,2
+    DIV BX
+    CMP DX,0
+    JE NOCARRY8
+    ADD AX,1
+    NOCARRY8:
+    MOV HALFRDLEN,AX
+
+    ;SETA
+    MOV AX,TOTALOFRDS
+    MOV ATEMPRD,AX
+    MOV AX,TOTALOFRDPS
+    MOV ATEMPRDP,AX
+
+    ;SET B
+    ;SUM DIVIDE NUMBER OF RAW DATA
+    MOV AX,TOTALOFRD
+    MOV BTEMPRD,AX
+    MOV AX,TOTALOFRDP
+    MOV BTEMPRDP,AX
+
+    ; CALCULATE SQUARE OF POINT
+    MOV AX,BTEMPRDP
+    MUL AX
+    DIV hundreds_dw
+    MOV TEMPRDP,ax
+    CMP DX,50
+    JL NOCARRY9
+    INC TEMPRDP
+
+    ;2AB
+    NOCARRY9:
+    MOV DX,0
+    Mov Ax,BTEMPRD;
+    mul BTEMPRDP
+    DIV hundreds_dw
+
+    ;AX*2
+    mov bx,2
+    mul bx
+    add TEMPRD,AX
+
+    ;DX*2
+    MOV AX,DX
+    MUL BX
+    CMP AX,100
+    JB NOCARRY14
+    ADD TEMPRD,1
+    SUB AX,100
+
+    NOCARRY14:
+    ADD TEMPRDP,AX
+
+    
+
+    MOV DX,0
+    ;digit 
+    ;IF DATA LARGE WILL STORE IN DX:AX
+    MOV AX,BTEMPRD;
+    MUL AX
+    ADD AX,TEMPRD
+    ADC DX,0
+
+    ;SET B DIVIDE BY N
+    DIV RDLEN
+    MOV BTEMPRD,AX
+
+    ;REMAINDER NEED TO PROCEED WITH CARRY
+    MOV AX,DX
+    MUL hundreds_dw
+    MOV DX,0
+    DIV RDLEN
+    MOV TEMPRDP,AX
+
+    MOV DX,0
+    MOV AX,BTEMPRDP
+    DIV RDLEN
+    ADD AX,TEMPRDP
+    CMP DX,HALFRDLEN
+    JL NOCARRY10
+    ADD AX,1
+    NOCARRY10:
+    MOV BTEMPRDP,AX
+
+
+   
+    ;SET A- SETB
+    MOV AX,ATEMPRDP
+    MOV BX,BTEMPRDP
+    CMP BX,AX
+    JLE NONEEDBORROW2
+    DEC ATEMPRD
+    ADD AX,100
+
+    NONEEDBORROW2:
+    SUB AX,BX
+    MOV VARIANCERDPSAM,AX
+    MOV AX,ATEMPRD
+    MOV BX,BTEMPRD
+    SUB AX,BX
+    MOV VARIANCERDSAM,AX
+
+    
+    
+
+    ;RESULT DIVIDE BY N-1
+    MOV DX,0
+    MOV AX,VARIANCERDSAM
+    mov bx,RDLEN
+    dec bx
+    DIV bx
+    MOV VARIANCERDSAM,AX
+
+    ;REMAINDER NEED TO PROCEED WITH CARRY
+    MOV AX,DX
+    MUL hundreds_dw
+    MOV DX,0
+    mov bx,RDLEN
+    dec bx
+    DIV bx
+    MOV TEMPRDP,AX
+
+    MOV DX,0
+    MOV AX,VARIANCERDPSAM
+    mov bx,RDLEN
+    dec bx
+    DIV bx
+    ADD AX,TEMPRDP
+    CMP DX,HALFRDLEN
+    JL NOCARRY11
+    ADD AX,1
+    NOCARRY11:
+    MOV VARIANCERDPSAM,AX
+
+    RET
+CALSAMVARIANCE ENDP
+;CAN USE THE SAME CODE FROM CALSTDC,LAZY TO CHANGE VARIABLE NAME AND PARAMETER
+CALSTDVSAM PROC FAR
+    MOV NTRESULTAXSAM,0
+    MOV NTRESULTDXSAM,0
+    MOV ORIAX,0
+    MOV ORIDX,0
+    CMP LIMIT,0
+    JE DOCALSTDVSAM
+    RET
+    DOCALSTDVSAM:
+    
+    mov ax,VARIANCERDPSAM
+    CMP AX,0
+    JE CHECKRDSAM
+    MUL hundreds_dw
+    MOV TEMPAX,AX
+
+    CHECKRDSAM:
+    MOV AX,VARIANCERDSAM
+    CMP AX,0
+    JE ENDCALSTDVSAM
+    mul ten_thousands_dw
+    add ax,TEMPAX
+    adc dx,0
+
+    mov ORIAX,ax
+    mov ORIDX,DX
+    mov NTRESULTAXSAM,27000
+
+    Mov cx,10
+    NEWTONCALSAM:  
+        MOV AX,ORIAX
+        MOV DX,ORIDX
+        DIV NTRESULTAXSAM
+
+        ADD AX,NTRESULTAXSAM
+        MOV DX,0
+        MOV BX,2
+        DIV bx
+
+        MOV NTRESULTAXSAM,AX
+        MOV NTRESULTDXSAM,DX
+
+
+    LOOP NEWTONCALSAM
+
+    MOV AX,NTRESULTAXSAM
+    MOV DX,0
+    DIV hundreds_dw
+    MOV NTRESULTAXSAM,AX
+    MOV NTRESULTDXSAM,DX
+
+    ENDCALSTDVSAM:
+    RET
+CALSTDVSAM ENDP
+;EXTRA
+
+
+;BX AND AX RESERVED IN STACTS PUT NUMBER AS PARAMETER THEN OUTPUT
+STACTS PROC FAR
+    MOV CX,5
+    MOV DI,4
+
+    STADIV10:
+        MOV DX,0
+        DIV tens_dw
+        MOV STRDISDIGIT[DI],DL
+        DEC DI
+    LOOP STADIV10
+
+    MOV CX,5
+    MOV DI,0
+    mov HAVEDIGITSTA,0
+    STADISLOOP:
+        cmp di,4
+        je onlydigit
+        cmp HAVEDIGITSTA,0
+        jne onlydigit
+        mov ah,STRDISDIGIT[DI]
+        cmp ah,0
+        je NEXTDIS2
+        mov HAVEDIGITSTA,1
+
+        onlydigit:
+        MOV AH,02H
+        MOV DL,STRDISDIGIT[DI]
+        ADD DL,30H
+        INT 21H
+
+        NEXTDIS2:
+        INC DI
+
+        
+    LOOP STADISLOOP
+
+
+    MOV CX,2
+    MOV DI,1
+    MOV AX,BX
+    STADIV10P:
+        MOV DX,0
+        DIV tens_dw
+        MOV STRDISPOINT[DI],DL
+        DEC DI
+    LOOP STADIV10P
+
+    mov ah,02h
+    MOV DL,'.'
+    int 21h
+
+    MOV CX,2
+    MOV DI,0
+    STADISLOOPP:
+        MOV AH,02H
+        MOV DL,STRDISPOINT[DI]
+        ADD DL,30H
+        INT 21H
+        INC DI
+    LOOP STADISLOOPP
+    RET
+STACTS ENDP
+
+;SELECTION SORTING TECHNIQUE
+SELECTSORT PROC FAR
+
+    ;COPY ARRAY
+    MOV CX,RDLEN
+    MOV SI,0
+    COPYARRAY:
+        MOV AX,RAWDATA[SI]
+        MOV BX,RDPOINTS[SI]
+
+        MOV ASCRAWDATA[SI],AX
+        MOV ASCRDPOINT[SI],BX
+        ADD SI,2
+    LOOP COPYARRAY
+
+
+    MOV CX,RDLEN
+    MOV SI,0
+    RUNTORIARR:
+        ;Initial every unsorted SI as the smallest
+        MOV AX,ASCRAWDATA[SI]
+        MOV SMALLESTRD,AX
+        MOV AX,ASCRDPOINT[SI]
+        MOV SMALLESTRDP,AX
+
+        ;since si jmp 2 bit every times,convert it to 1 for CX
+        ;LAZY TO CREATE A NEW VARIABLE FOR CX PURPOSE
+        MOV DX,0
+        MOV AX,SI
+        MOV BX,2
+        DIV BX
+        MOV DX,AX
+        ;JUST STORE RESULT IN DX
+
+        ;INNER LOOP WILL START FROM UNSORTED PART ONLY
+        MOV TEMPCX,CX
+        MOV CX,RDLEN
+        SUB CX,DX ;HERE TO USE TO LIMIT THE LOOP ROUNDS, LAZY TO USE OTHER METHOD
+        MOV DI,SI ;START FROM SI, SI IS UNSORTED INDEX
+        FINDSMALLEST:
+
+            MOV AX,ASCRAWDATA[DI]
+            MOV BX,ASCRDPOINT[DI]
+
+            CMP AX,SMALLESTRD
+            JG NEXTFIND ;IF LARGEER GO NEXT
+            JE CPOINT; IF SAME CHECK POINT
+            JMP RPCSMALLEST
+
+            CPOINT:
+            CMP BX,SMALLESTRDP
+            JGE NEXTFIND
+
+            ;EXCHANGE THE VALUE 
+            RPCSMALLEST:
+            MOV DX,SMALLESTRD
+            MOV ASCRAWDATA[DI],DX
+            MOV DX,SMALLESTRDP
+            MOV ASCRDPOINT[DI],DX
+
+            MOV SMALLESTRD,AX
+            MOV SMALLESTRDP,BX
+
+            NEXTFIND:
+            ADD DI,2
+
+        LOOP FINDSMALLEST
+
+        ;FIND THE SMALLEST FOR SI
+        MOV AX,SMALLESTRD
+        MOV ASCRAWDATA[SI],AX
+        MOV AX,SMALLESTRDP
+        MOV ASCRDPOINT[SI],AX
+
+        MOV CX,TEMPCX
+        ADD SI,2
+
+    LOOP RUNTORIARR
+
+    RET
+SELECTSORT ENDP
+
+;DISPLAY STATISTICS RESULT
+STARESULT PROC FAR
+    ;Display Enter num
+    MOV AH,09H
+    LEA DX,ENTERNUMMSG
+    INT 21h
+
+    MOV CX,RDLEN
+    MOV SI,0
+    SHOWENUM: 
+        MOV TEMPCX,CX
+        MOV AX,RAWDATA[SI]
+        MOV BX,RDPOINTS[SI]
+        CALL FAR PTR STACTS
+
+        MOV AH,02h
+        MOV dl,' '
+        INT 21h
+
+        ADD SI,2
+        MOV CX,TEMPCX
+    LOOP SHOWENUM
+
+    MOV AH,09h
+    LEA DX,NEW_LINE
+    INT 21h
+
+    ;DISPLAY ASCENDING ORDER
+    MOV AH,09H
+    LEA DX,ASCENNUMMSG
+    INT 21h
+    MOV CX,RDLEN
+    MOV SI,0
+    SHOWANUM: 
+        MOV TEMPCX,CX
+        MOV AX,ASCRAWDATA[SI]
+        MOV BX,ASCRDPOINT[SI]
+        CALL FAR PTR STACTS
+
+        MOV AH,02h
+        MOV dl,' '
+        INT 21h
+
+        ADD SI,2
+        MOV CX,TEMPCX
+    LOOP SHOWANUM
+
+    ;DISPLAY COUNT
+    MOV AH,09h
+    LEA DX,NEW_LINE
+    INT 21h
+
+    MOV AH,09h
+    LEA DX,COUNTMSG
+    INT 21h
+
+    ;display count
+    MOV AX,RDLEN
+    MOV DX,0
+    DIV tens_dw
+    MOV BX,DX
+    MOV DX,AX
+    MOV AH,02h
+    ADD DX,30H
+    INT 21h
+    MOV AH,02h
+    MOV DX,BX
+    ADD DX,30H
+    INT 21H
+
+    ;DISPLAY MODE
+    MOV AH,09h
+    LEA DX,MODEMSG1
+    INT 21H
+    
+    CMP HIGHOCCUR,1
+    JE NOMODE
+    mov ax,MODELEN
+    cmp ax,RDLEN
+    JE NOMODE
+    
+    MOV CX,MODELEN
+    MOV SI,0
+    DISMODEDATA:
+        MOV TEMPCX,CX
+        MOV DI,MODEARRAY[SI]
+
+       
+        MOV AX,RAWDATA[DI]
+        MOV BX,RDPOINTS[DI]
+        CALL FAR PTR STACTS
+
+        MOV AH,02h
+        MOV dl,' '
+        INT 21h
+
+        MOV CX,TEMPCX
+        ADD SI,2
+    LOOP DISMODEDATA
+    JMP nextmodeMSG
+
+    NOMODE:
+    MOV AH,09H
+    LEA DX,NOMODEMSG
+    INT 21H
+
+    nextmodeMSG:
+    
+    MOV AH,09h
+    LEA DX,MODEMSG2
+    INT 21H
+
+    MOV DX,HIGHOCCUR
+    CMP DX,10
+    JGE CONTODIS
+    JMP NOTCON
+
+    CONTODIS:
+    MOV DX,0
+    MOV AX,HIGHOCCUR
+    DIV tens_dw
+    MOV TEMPAX,AX
+    MOV TEMPDX,DX
+
+    MOV AH,02h
+    MOV DX,TEMPAX
+    ADD DX,30H
+    INT 21h
+
+    MOV AH,02h
+    MOV DX,TEMPDX
+    ADD DX,30H
+    INT 21H
+    JMP DONEDIS
+
+    NOTCON:
+    MOV AH,02h
+    ADD DX,30H
+    INT 21H
+    DONEDIS:
+
+    ;DISPLAY MEDIAN
+    MOV AH,09h
+    LEA DX,MEDIANMSG
+    INT 21h
+    MOV AX,MEDIANRD
+    MOV BX,MEDIANRDP
+    CALL FAR PTR STACTS
+
+    ;DISPLAY AVERAGE 
+    MOV AH,09h
+    LEA DX,AVGMSG
+    INT 21h
+    MOV AX,AVROFRD
+    MOV BX,AVROFRDP
+    CALL FAR PTR STACTS
+
+    ;DISPLAY SMALLEST LARGEST
+    MOV AH,09h
+    LEA DX,LargestMsg
+    INT 21h
+    MOV AX,LARGESTRD
+    MOV BX,LARGESTRDP
+    CALL FAR PTR STACTS
+
+    MOV AH,09h
+    LEA DX,SmallestMsg
+    INT 21H
+    MOV AX,SMALLESTRD
+    MOV BX,SMALLESTRDP
+    CALL FAR PTR STACTS
+
+    MOV AH,09h
+    LEA DX,RangeMsg
+    INT 21h
+    MOV AX,RANGERD
+    MOV BX,RANGERDP
+    CALL FAR PTR STACTS
+
+    ;DISPLAY TOTAL
+    MOV AH,09h
+    LEA DX,SUMOFTOTALMSG
+    INT 21H
+    MOV AX,TOTALOFRD
+    MOV BX,TOTALOFRDP
+    CALL FAR PTR STACTS
+
+    ;IF OVER LIMIT SHOULD DISPLAY MESSAGE
+    CMP LIMIT,0
+    JE NOOVERLIMIT
+    MOV AH,09h
+    LEA DX,NEW_LINE
+    INT 21h
+    MOV AH,09h
+    LEA DX,ERRORMSG
+    INT 21H
+
+    NOOVERLIMIT:
+    MOV AH,09h
+    LEA DX,SQUAMSG
+    INT 21H
+    MOV AX,TOTALOFRDS
+    MOV BX,TOTALOFRDPS
+    CALL FAR PTR STACTS
+
+    ;STANDARD DEVIATION
+    MOV AH,09h
+    LEA DX,VarianceMsg
+    INT 21h
+    MOV AX,VARIANCERD
+    MOV BX,VARIANCERDP
+    CALL FAR PTR STACTS
+
+
+    ;STANDARD DEVIATION
+    MOV AH,09h
+    LEA DX,StanDMSG
+    INT 21H
+    MOV AX,NTRESULTAX
+    MOV BX,NTRESULTDX
+    CALL FAR PTR STACTS
+
+    ;SAMPLE VARIANCE
+    MOV AH,09h
+    LEA DX,VarianceMsgSAM
+    INT 21H
+    MOV AX,VARIANCERDSAM
+    MOV BX,VARIANCERDPSAM
+    CALL FAR PTR STACTS
+
+    ;SAMPLE STANDARD DEVIATION
+    MOV AH,09h
+    LEA DX,StanDMsgSAM
+    INT 21H
+    MOV AX,NTRESULTAXSAM
+    MOV BX,NTRESULTDXSAM
+    CALL FAR PTR STACTS
+
+    RET
+STARESULT ENDP
+
+;LARGEST VALUE - SMALLEST VALUE
+CALRANGE PROC FAR
+    MOV AX,ASCRAWDATA[0]
+    MOV SMALLESTRD,AX
+    MOV BX,ASCRDPOINT[0]
+    MOV SMALLESTRDP,BX
+
+    MOV AH,09h
+    LEA DX,NEW_LINE
+    INT 21h
+
+    mov ax,RDLEN
+    dec ax
+    mov bx,2
+    mul bx
+    mov si,ax
+
+    MOV AX,ASCRAWDATA[SI]
+    MOV LARGESTRD,AX
+    MOV BX,ASCRDPOINT[SI]
+    MOV LARGESTRDP,BX
+
+    CMP BX,SMALLESTRDP
+    JGE NONEEDBORROW3
+    DEC AX
+    ADD BX,100
+    NONEEDBORROW3:
+    SUB BX,SMALLESTRDP
+    MOV RANGERDP,BX
+    SUB AX,SMALLESTRD
+    MOV RANGERD,AX
+
+    ENDCALRANGE:
+    RET
+CALRANGE ENDP
+
+
+;COMMON FUNCTION
+;CLEAR SCREEN FUNCTION FROM EXITING ASSIGNMENT GITHUB
+clearSc proc FAR
+	mov ah,06h
+	mov bh,07h
+	mov al,0
+	mov cx,0
+	mov dh,24
+	mov dl,79
+	int 10H
+
+	mov ah,02H
+	mov bh,0
+	mov dx,0
+	int 10h
+
+	RET
+clearSc endp
+
+END MAIN
